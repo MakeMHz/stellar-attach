@@ -1,0 +1,3 @@
+[submodule "3rdparty/nxdk"]
+	path = 3rdparty/nxdk
+	url = git@github.com:MakeMHz/nxdk.git
