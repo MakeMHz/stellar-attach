@@ -24,6 +24,21 @@ int has_iso_extension(unsigned int len, char *str) {
 	return (RtlCompareString(&tail, &ext_str, TRUE) == 0);
 }
 
+int has_cso_extension(unsigned int len, char *str) {
+	ANSI_STRING tail;
+	char extension[] = ".cso";
+	ANSI_STRING ext_str = { sizeof(extension) - 1, sizeof(extension), extension };
+
+	if(len < sizeof(extension) - 1)
+		return FALSE;
+
+	tail.Length = sizeof(extension) - 1;
+	tail.MaximumLength = tail.Length;
+	tail.Buffer = str + len - sizeof(extension) + 1;
+
+	return (RtlCompareString(&tail, &ext_str, TRUE) == 0);
+}
+
 int compare_string_tails(PANSI_STRING str1, PANSI_STRING str2, WORD skip) {
 	ANSI_STRING n1, n2;
 
@@ -98,7 +113,8 @@ int main(void) {
 		} else
 			dir_info = (PFILE_DIRECTORY_INFORMATION)((char *)dir_info + dir_info->NextEntryOffset);
 
-		if(!has_iso_extension(dir_info->FileNameLength, dir_info->FileName))
+		if(!has_iso_extension(dir_info->FileNameLength, dir_info->FileName) &&
+		   !has_cso_extension(dir_info->FileNameLength, dir_info->FileName))
 			continue;
 
 		ANSI_STRING new_file = {
