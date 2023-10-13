@@ -1,0 +1,7 @@
+bin/
+*.obj
+*.d
+loader/**
+.vscode/**
+*.iso
+*.exe
