@@ -58,8 +58,12 @@ int AttachConfigCb(const char *Section, const char *Key, const char *Value, void
 		ANSI_STRING FilePath;
 		RtlInitAnsiString(&FilePath, Value);
 
-		// Check if the length is greater than the maximum length.
-		if(FilePath.Length > (MAX_PATH - 1)) {
+		// Sanity check that the path is a device path.
+		if(FilePath.Buffer[0] != '\\')
+			return 0;
+
+		// Sanity check the device path length.
+		if(FilePath.Length < sizeof("\\Device\\") || FilePath.Length > (MAX_PATH - 1)) {
 			// On error we have to reset the number of slices back to zero since we can only assume that the config is
 			// corrupted.
 			AttachSliceData.NumberOfSlices = 0;
