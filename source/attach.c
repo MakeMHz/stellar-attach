@@ -30,7 +30,7 @@ ATTACH_SLICE_DATA AttachSliceData = {
 	}
 };
 
-int main(void) __attribute__((optnone)) {
+int main(void) {
 	// Make a copy of the XBE launch path.
 	ANSI_STRING SearchPath = *XeImageFileName;
 
