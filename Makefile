@@ -11,6 +11,7 @@ XBE_XTIMAGE = $(CURDIR)/resources/logo.xpr
 #
 SRCS += \
 	$(CURDIR)/source/attach.c \
+	$(CURDIR)/source/helpers.c \
 	$(CURDIR)/source/resources.packed.obj
 
 CFLAGS += \
