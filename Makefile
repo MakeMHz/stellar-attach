@@ -19,6 +19,12 @@ CFLAGS += \
 	-I$(CURDIR)/source \
 	-DWIN32
 
+# minIni
+SRCS += \
+	$(CURDIR)/3rdparty/minIni/dev/minIni.c
+CFLAGS += \
+	-I$(CURDIR)/3rdparty/minIni/dev
+
 # Optimize build by removing unused symbols
 CFLAGS += \
 	-ffunction-sections \

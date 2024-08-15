@@ -7,6 +7,7 @@
 #include <hal/xbox.h>
 #include <xboxkrnl/xboxkrnl.h>
 #include <windows.h>
+#include <minIni.h>
 #include "attach.h"
 #include "helpers.h"
 
@@ -43,7 +44,49 @@ ATTACH_SLICE_DATA AttachSliceData = {
 	}
 };
 
+int AttachConfigCb(const char *Section, const char *Key, const char *Value, void *Userdata) {
+	(void)Section;  // Unused
+	(void)Userdata; // Unused
+
+	// Check if the key equals "VIRTUAL_IMAGE_FILE_PATH".
+	if(strcmp(Key, "VIRTUAL_IMAGE_FILE_PATH") == 0) {
+		// Make sure we have room for another slice.
+		if(AttachSliceData.NumberOfSlices >= MAX_IMAGE_SLICES)
+			return 0;
+
+		// Path to the virtual disc image.
+		ANSI_STRING FilePath;
+		RtlInitAnsiString(&FilePath, Value);
+
+		// Check if the length is greater than the maximum length.
+		if(FilePath.Length > (MAX_PATH - 1)) {
+			// On error we have to reset the number of slices back to zero since we can only assume that the config is
+			// corrupted.
+			AttachSliceData.NumberOfSlices = 0;
+			return 0;
+		}
+
+		// New slice
+		PANSI_STRING Slice = &AttachSliceData.Files[AttachSliceData.NumberOfSlices];
+
+		// Copy the file path to the slice.
+		RtlCopyString(Slice, &FilePath);
+
+		// Increment the number of slices.
+		AttachSliceData.NumberOfSlices++;
+	}
+
+	return 1;
+}
+
 int main(void) {
+	// Parse the configuration file.
+	ini_browse(AttachConfigCb, NULL, "D:\\attach.ini");
+
+	// Check if we already have attach data.
+	if(AttachSliceData.NumberOfSlices > 0)
+		goto AttachVirtualDisc;
+
 	// Check if the virtual file paths have been modified (defined) in the XBE binary.
 	// NOTE: This is a simple way to check if the virtual file paths have been modified. A more robust way would be to
 	// check if the virtual file paths are valid and accessible, but also trying to avoid "VIRTUAL_IMAGE_FILE_PATH"

@@ -2,3 +2,6 @@
 	path = 3rdparty/nxdk
 	url = git@github.com:MakeMHz/nxdk.git
     branch = hack-cxbe-sections
+[submodule "3rdparty/minIni"]
+	path = 3rdparty/minIni
+	url = git@github.com:compuphase/minIni.git
