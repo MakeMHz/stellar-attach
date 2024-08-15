@@ -19,6 +19,14 @@ CFLAGS += \
 	-I$(CURDIR)/source \
 	-DWIN32
 
+# Optimize build by removing unused symbols
+CFLAGS += \
+	-ffunction-sections \
+	-fdata-sections
+CXXFLAGS += \
+	-ffunction-sections \
+	-fdata-sections
+
 include $(NXDK_DIR)/Makefile
 
 $(OBJS): $(CURDIR)/source/resources.obj
