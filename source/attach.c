@@ -14,7 +14,20 @@
 ANSI_STRING VirtualDeviceName = RTL_CONSTANT_STRING("\\Device\\CdRom1");
 
 // Virtual disc image slice data
-CHAR VirtualFilePath[8][MAX_PATH] = { 0 };
+// One use case for stellar-attach is for the modification and usage from attach generator scripts. By pre-defining the
+// slice paths we can give developers a way to easily attach a virtual disc image by modifying the XBE binary directly
+// without having to modify the source code.
+__attribute__((section("VPATHS")))
+CHAR VirtualFilePath[8][MAX_PATH] = {
+	"VIRTUAL_IMAGE_FILE_PATH_1",
+	"VIRTUAL_IMAGE_FILE_PATH_2",
+	"VIRTUAL_IMAGE_FILE_PATH_3",
+	"VIRTUAL_IMAGE_FILE_PATH_4",
+	"VIRTUAL_IMAGE_FILE_PATH_5",
+	"VIRTUAL_IMAGE_FILE_PATH_6",
+	"VIRTUAL_IMAGE_FILE_PATH_7",
+	"VIRTUAL_IMAGE_FILE_PATH_8"
+ };
 
 ATTACH_SLICE_DATA AttachSliceData = {
 	.NumberOfSlices = 0,
@@ -31,6 +44,44 @@ ATTACH_SLICE_DATA AttachSliceData = {
 };
 
 int main(void) {
+	// Check if the virtual file paths have been modified (defined) in the XBE binary.
+	// NOTE: This is a simple way to check if the virtual file paths have been modified. A more robust way would be to
+	// check if the virtual file paths are valid and accessible, but also trying to avoid "VIRTUAL_IMAGE_FILE_PATH"
+	// appearing multiple times in the XBE binary.
+	if(VirtualFilePath[0][0] == '\\') {
+		// Reset the number of slices.
+		AttachSliceData.NumberOfSlices = 0;
+
+		// Loop through all the slice paths.
+		for(DWORD Index = 0; Index < ARRAYSIZE(AttachSliceData.Files); Index++) {
+			PANSI_STRING File = &AttachSliceData.Files[Index];
+
+			// Check if the slice path has been modified.
+			if(VirtualFilePath[Index][0] != '\\')
+				break;
+
+			// Check if the length is greater than the maximum length.
+			// TODO: Should we fallback to the default logic instead of exiting?
+			size_t Length = strlen(File->Buffer);
+			if(Length > (File->MaximumLength - 1))
+				goto CleanupAndExit;
+
+			// Correct AttachSliceData so the Files strings have the right Length, since this unlikely to have been
+			// updated in the XBE binary.
+			File->Length = (USHORT)Length;
+
+			// Increment the number of slices.
+			AttachSliceData.NumberOfSlices++;
+		}
+	}
+
+	// Check if we already have attach data.
+	if(AttachSliceData.NumberOfSlices > 0)
+		goto AttachVirtualDisc;
+
+	// Clear the virtual file paths.
+	RtlZeroMemory(VirtualFilePath, sizeof(VirtualFilePath));
+
 	// Make a copy of the XBE launch path.
 	ANSI_STRING SearchPath = *XeImageFileName;
 
@@ -142,6 +193,7 @@ QueryNextFile:
 	// Close the directory handle.
 	NtClose(Handle);
 
+AttachVirtualDisc:
 	// Open the virtual device.
 	OBJECT_ATTRIBUTES DeviceObjectAttributes = {
 		.ObjectName    = &VirtualDeviceName,
